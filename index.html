@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>同城速配 · 缘分一线牵</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", -apple-system, sans-serif;
+    background: linear-gradient(160deg, #ff5f6d 0%, #ffc371 100%);
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.28);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .screen { display: none; padding: 28px 24px 32px; }
+  .screen.active { display: block; animation: slideIn .4s ease; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .topbar {
+    background: linear-gradient(135deg, #ff5f6d, #ff9966);
+    color: #fff;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+  .badge { margin-left: auto; font-size: 11px; background: rgba(255,255,255,.25); padding: 4px 10px; border-radius: 999px; }
+
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 18px; }
+
+  label { display: block; font-size: 13px; color: #555; margin: 12px 0 6px; font-weight: 600; }
+  input, select {
+    width: 100%; padding: 12px 14px; border: 1.5px solid #eee;
+    border-radius: 12px; font-size: 15px; outline: none;
+    background: #fafafa; transition: border .2s;
+  }
+  input:focus, select:focus { border-color: #ff5f6d; background: #fff; }
+
+  .btn {
+    display: block; width: 100%; margin-top: 20px; padding: 14px;
+    border: none; border-radius: 14px; font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, #ff5f6d, #ff9966); color: #fff;
+    cursor: pointer; transition: transform .12s, box-shadow .2s;
+    box-shadow: 0 8px 20px rgba(255,95,109,.35);
+  }
+  .btn:active { transform: scale(.97); }
+
+  .card {
+    display: flex; align-items: center; gap: 14px;
+    border: 1.5px solid #f2f2f2; border-radius: 16px;
+    padding: 14px; margin-bottom: 12px; cursor: pointer;
+    transition: all .18s;
+  }
+  .card:hover, .card.selected { border-color: #ff5f6d; background: #fff5f5; transform: translateY(-2px); }
+  .avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0;
+  }
+  .info { flex: 1; }
+  .info .name { font-weight: 700; font-size: 16px; }
+  .info .meta { color: #999; font-size: 12px; margin-top: 3px; }
+  .tag {
+    font-size: 11px; background: #ffedf0; color: #ff5f6d;
+    padding: 3px 8px; border-radius: 999px;
+  }
+
+  .loader { text-align: center; padding: 20px 0; }
+  .spinner {
+    width: 64px; height: 64px; margin: 0 auto 18px;
+    border: 6px solid #ffe3e6; border-top-color: #ff5f6d;
+    border-radius: 50%; animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: #666; font-size: 14px; line-height: 1.8; }
+
+  .reveal {
+    text-align: center; padding: 10px 0;
+  }
+  .reveal .emoji { font-size: 72px; margin-bottom: 16px; }
+  .reveal h2 { font-size: 24px; margin-bottom: 12px; color: #ff5f6d; }
+  .reveal p { color: #666; font-size: 14px; line-height: 1.9; text-align: left; }
+
+  .footer-note { text-align: center; color: #bbb; font-size: 11px; padding: 16px; }
+
+  .flash {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); z-index: 99; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .flash.show { opacity: 1; pointer-events: auto; }
+  .flash-box {
+    background: #fff; border-radius: 16px; padding: 26px 22px;
+    max-width: 320px; text-align: center; margin: 0 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .flash-box .emoji { font-size: 52px; }
+  .flash-box h3 { font-size: 18px; margin: 12px 0 8px; }
+  .flash-box p { color: #777; font-size: 13px; line-height: 1.7; }
+  .flash-box .btn { margin-top: 16px; }
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="topbar">
+      <span class="logo">💘 同城速配</span>
+      <span class="badge">真人认证 · 严格保密</span>
+    </div>
+
+    <!-- 阶段1：注册 -->
+    <div class="screen active" id="screen-register">
+      <h1>注册会员</h1>
+      <div class="sub">填写信息，系统为你精准匹配同城有缘人</div>
+
+      <label>你的昵称</label>
+      <input id="f-nick" type="text" placeholder="例如：深夜寂寞的猫">
+
+      <label>年龄</label>
+      <select id="f-age">
+        <option value="18">18 岁</option>
+        <option value="20">20 岁</option>
+        <option value="25" selected>25 岁</option>
+        <option value="30">30 岁</option>
+        <option value="35">35 岁</option>
+        <option value="40">40 岁</option>
+        <option value="45">45 岁</option>
+        <option value="50">50 岁</option>
+      </select>
+
+      <label>性别</label>
+      <select id="f-gender">
+        <option value="男">男</option>
+        <option value="女">女</option>
+        <option value="保密">保密</option>
+      </select>
+
+      <label>所在城市</label>
+      <input id="f-city" type="text" placeholder="例如：上海">
+
+      <label>想找的对象</label>
+      <select id="f-pref">
+        <option value="异性">异性</option>
+        <option value="同性">同性</option>
+        <option value="都可以">都可以</option>
+      </select>
+
+      <button class="btn" onclick="startMatch()">立即免费匹配</button>
+    </div>
+
+    <!-- 阶段2：匹配中 -->
+    <div class="screen" id="screen-loading">
+      <h1>正在匹配</h1>
+      <div class="loader">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">
+          正在定位你的同城坐标…<br>
+          正在筛选 18-50 岁优质对象…<br>
+          正在为你计算缘分指数…
+        </div>
+      </div>
+    </div>
+
+    <!-- 阶段3：匹配结果 -->
+    <div class="screen" id="screen-result">
+      <h1>匹配结果</h1>
+      <div class="sub">以下对象此刻也在线，选择一个开始聊天</div>
+      <div id="candidate-list"></div>
+    </div>
+
+    <!-- 阶段4：反转 -->
+    <div class="screen" id="screen-reveal">
+      <div class="reveal">
+        <div class="emoji" id="reveal-emoji">🤡</div>
+        <h2 id="reveal-title">你上当了！</h2>
+        <p id="reveal-text"></p>
+        <button class="btn" onclick="restart()">再玩一次</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note" style="display:none"></div>
+
+  <!-- 弹窗 -->
+  <div class="flash" id="flash">
+    <div class="flash-box">
+      <div class="emoji" id="flash-emoji">😏</div>
+      <h3 id="flash-title">提示</h3>
+      <p id="flash-text"></p>
+      <button class="btn" onclick="closeFlash()">知道了</button>
+    </div>
+  </div>
+
+<script>
+  (function () {
+    const candidates = [
+      { emoji: '👩', name: '小甜甜', meta: '24岁 · 1.2km · 在线', tag: '可约' },
+      { emoji: '👩🏻', name: '温柔学姐', meta: '27岁 · 2.5km · 在线', tag: '可约' },
+      { emoji: '👨', name: '肌肉猛男', meta: '29岁 · 0.8km · 在线', tag: '可约' },
+      { emoji: '👩🏼', name: '蜜桃女孩', meta: '22岁 · 3.1km · 在线', tag: '可约' },
+      { emoji: '👨🏻', name: '多金大叔', meta: '38岁 · 1.5km · 在线', tag: '可约' },
+      { emoji: '👩🏽', name: '夜店女王', meta: '26岁 · 0.5km · 在线', tag: '可约' }
+    ];
+
+    const loadingSteps = [
+      '正在定位你的同城坐标…',
+      '正在筛选 18-50 岁优质对象…',
+      '正在为你计算缘分指数…',
+      '正在破解对方在线状态…',
+      '正在生成专属匹配报告…',
+      '匹配成功，即将揭晓结果…'
+    ];
+
+    function show(id) {
+      document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showFlash(emoji, title, text) {
+      document.getElementById('flash-emoji').textContent = emoji;
+      document.getElementById('flash-title').textContent = title;
+      document.getElementById('flash-text').textContent = text;
+      document.getElementById('flash').classList.add('show');
+    }
+    window.closeFlash = function () {
+      document.getElementById('flash').classList.remove('show');
+    };
+
+    window.startMatch = function () {
+      var nick = document.getElementById('f-nick').value.trim();
+      var city = document.getElementById('f-city').value.trim();
+      if (!nick) { showFlash('😅', '还差一步', '先填个昵称吧，不然系统不知道怎么称呼你'); return; }
+      if (!city) { showFlash('😅', '还差一步', '填一下城市，不然没法「同城」速配呀'); return; }
+
+      show('screen-loading');
+      var step = 0;
+      var el = document.getElementById('loading-text');
+      el.innerHTML = loadingSteps[0] + '<br>';
+
+      var timer = setInterval(function () {
+        step++;
+        if (step < loadingSteps.length) {
+          el.innerHTML = loadingSteps.slice(0, step + 1).join('<br>');
+        } else {
+          clearInterval(timer);
+          renderCandidates();
+          show('screen-result');
+        }
+      }, 700);
+    };
+
+    function renderCandidates() {
+      var list = document.getElementById('candidate-list');
+      list.innerHTML = '';
+      candidates.forEach(function (c) {
+        var div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML =
+          '<div class="avatar">' + c.emoji + '</div>' +
+          '<div class="info">' +
+            '<div class="name">' + c.name + ' <span class="tag">' + c.tag + '</span></div>' +
+            '<div class="meta">' + c.meta + '</div>' +
+          '</div>';
+        div.onclick = function () { reveal(c); };
+        list.appendChild(div);
+      });
+    }
+
+    function reveal(c) {
+      var nick = document.getElementById('f-nick').value.trim() || '你';
+      var texts = [
+        '「' + c.name + '」已离线，其实从头到尾就没有这个人。\n\n' +
+          '这是一个假网站，专门治各种精虫上脑。\n\n' +
+          '醒醒吧 ' + nick + '，天上不会掉对象，只会掉陷阱。\n\n' +
+          '真正靠谱的是：洗把脸、早点睡、好好生活，缘分自然来。',
+        '恭喜 ' + nick + '！你刚刚差点把个人信息发给一个骗子。\n\n' +
+          '没错，这整站都是假的——没有同城、没有「可约」、没有小甜甜。\n\n' +
+          '现实中遇到这种「免费速配」的网站，第一反应应该是：快跑！'
+      ];
+      document.getElementById('reveal-emoji').textContent = '🤡';
+      document.getElementById('reveal-title').textContent = '你上当了！';
+      document.getElementById('reveal-text').innerText = texts[Math.floor(Math.random() * texts.length)];
+      show('screen-reveal');
+    }
+
+    window.restart = function () {
+      document.getElementById('f-nick').value = '';
+      document.getElementById('f-city').value = '';
+      show('screen-register');
+    };
+  })();
+</script>
+</body>
+</html>
